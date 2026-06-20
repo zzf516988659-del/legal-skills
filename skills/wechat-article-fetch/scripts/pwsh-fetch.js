@@ -33,11 +33,11 @@ function loadCookies() {
     if (files.length === 0) return null;
     const latest = files[0];
     const raw = JSON.parse(fs.readFileSync(path.join(cookieDir, latest), 'utf8'));
-    return raw.filter(c => c.domain === 'mp.weixin.qq.com').map(c => ({
+    return raw.filter(c => c.domain === 'mp.weixin.qq.com' || c.domain === '.mp.weixin.qq.com').map(c => ({
       name: c.name,
       value: c.value,
       domain: '.mp.weixin.qq.com',
-      path: c.path,
+      path: c.path || '/',
       sameSite: (c.sameSite === 'Strict' || c.sameSite === 'Lax' || c.sameSite === 'None') ? c.sameSite : 'Lax'
     }));
   } catch (e) {

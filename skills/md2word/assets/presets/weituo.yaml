@@ -1,0 +1,130 @@
+name: "法人授权委托书格式"
+description: "法人授权委托书专用格式，匹配用户提供的模板样式"
+
+# 页面设置 (GB/T 9704-2012)
+page:
+  width: 21.0
+  height: 29.7
+  margin_top: 3.7
+  margin_bottom: 3.5
+  margin_left: 2.8
+  margin_right: 2.6
+
+# 字体设置
+fonts:
+  default:
+    name: "仿宋"
+    name_alt: "仿宋_GB2312"
+    ascii: "Times New Roman"
+    size: 16      # 三号字 16pt
+    color: "#000000"
+
+# 标题设置
+titles:
+  level1:
+    size: 16
+    bold: true
+    align: "center"
+    space_before: 0
+    space_after: 0
+    indent: 0
+
+# 段落设置
+paragraph:
+  line_spacing: 28   # 28磅行距 (fixed Pt value)
+  first_line_indent: 24  # 2个字符
+  align: "justify"
+
+# 页码设置
+page_number:
+  enabled: false
+
+# 引号设置
+quotes:
+  convert_to_chinese: true
+
+# 表格设置
+table:
+  border_enabled: true
+  border_color: "#000000"
+  border_width: 4
+  line_spacing: 1.0
+  row_height_cm: 0.8
+  alignment: "center"
+  cell_margin:
+    top: 30
+    bottom: 30
+    left: 60
+    right: 60
+  vertical_align: "center"
+  header:
+    font: "Times New Roman"
+    size: 10.5
+    bold: true
+    color: "#000000"
+  body:
+    font: "仿宋"
+    font_alt: "仿宋_GB2312"
+    size: 10.5
+    color: "#000000"
+
+# 代码块设置
+code_block:
+  label:
+    font: "Times New Roman"
+    size: 10
+    color: "#808080"
+  content:
+    font: "Times New Roman"
+    size: 10
+    color: "#333333"
+    left_indent: 24
+    line_spacing: 1.2
+
+# 行内代码设置
+inline_code:
+  font: "Times New Roman"
+  size: 10
+  color: "#333333"
+
+# 引用块设置
+quote:
+  background_color: "#EAEAEA"
+  left_indent_inches: 0.2
+  font_size: 9
+  line_spacing: 1.5
+
+# 数学公式设置
+math:
+  font: "Times New Roman"
+  size: 11
+  italic: true
+  color: "#00008B"
+
+# 图片设置
+image:
+  display_ratio: 1.0
+  max_width_cm: 14.64
+  target_dpi: 260
+  show_caption: true
+
+# 分割线设置
+horizontal_rule:
+  character: "─"
+  repeat_count: 55
+  font: "Times New Roman"
+  size: 12
+  color: "#808080"
+  alignment: "center"
+
+# 列表设置
+lists:
+  bullet:
+    marker: "•"
+    indent: 24
+  numbered:
+    indent: 24
+    preserve_format: true
+  task:
+    unchecked: "☐"
+    checked: "☑"
