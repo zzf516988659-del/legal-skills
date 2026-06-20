@@ -150,4 +150,4 @@ python3 ~/.openclaw/workspace/skills/legal-skills-github/skills/wenge/scripts/fo
 - **文格文章**：`E:\律师事务部\各类工具\文格_法律文书模板执行Skill_lilialla_20260605.md`
 - **文格学习笔记**：本笔记上方对话
 - **md2word**：`skills/legal-skills-github/skills/md2word/`
-- **wenge**：`skills/legal-skills-github/skills/wenge/`（2026-06-06 升级替代 md2word-gate）
+- **wenge**：`skills/legal-skills-github/skills/wenge/`（2026-06-06 已合并替代原 md2word-gate v0.1.0）

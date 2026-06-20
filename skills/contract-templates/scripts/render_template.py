@@ -9,7 +9,7 @@ contract-templates 模板渲染脚本
   2. 批量渲染：--data-file JSON 文件（每行一条数据）
   3. 支持字段校验：必填字段缺失时报警
   4. 支持可选字段默认值：{{XXX:default}}
-  5. 输出 Markdown，可选触发 md2word + md2word-gate
+  5. 输出 Markdown，可选触发 md2word + wenge 门禁（format_gate.py）
 
 用法:
   # 单份

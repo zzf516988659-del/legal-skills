@@ -25,7 +25,7 @@ license: MIT
 |---|---|---|---|
 | **A. 清理/格式化** | "清理标点"、"去 AI"、"格式化"、"标点全角" | `de-ai-polish` | 修复后的 Markdown |
 | **B. 转 Word（单文件）** | "转 Word"、"出 DOCX"、"md2word" | `md2word` | DOCX |
-| **C. 转 Word（带门禁）** | "转 Word" + "正式"、"对外"、"盖章" | `md2word` + `md2word-gate` | DOCX + 门禁报告 |
+| **C. 转 Word（带门禁）** | "转 Word" + "正式"、"对外"、"盖章" | `md2word` + `wenge` 门禁(`format_gate.py`) | DOCX + 门禁报告 |
 | **D. 模板生成** | "出 X 份律师函"、"批量出"、"按模板" | `contract-templates` | 多份 DOCX |
 | **E. 合同审查** | "审查合同"、"审核合同"、"评审合同" | `contract-copilot`（3-Call 流水线）| 审查报告 + 修订版 |
 | **F. 合同起草** | "起草合同"、"拟合同"、"写合同" | `contract-copilot` | 合同初稿 + 审查意见 |
@@ -104,7 +104,7 @@ Step 4: 启动对应 skill → 按其内部流程执行
 用户："审查这份合同，出个修订版"
 
 - 任务类型：E（合同审查）+ C（转 Word）
-- skill 顺序：contract-copilot → md2word → md2word-gate
+- skill 顺序：contract-copilot → md2word → wenge 门禁(`format_gate.py`)
 - 输出：审查报告 + 修订版 DOCX（门禁通过）
 
 ### 4.3 场景 3：模糊请求

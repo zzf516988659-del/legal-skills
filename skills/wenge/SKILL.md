@@ -162,4 +162,4 @@ sudo apt install libreoffice poppler-utils
 - **文格文章**：`E:\律师事务部\各类工具\文格_法律文书模板执行Skill_lilialla_20260605.md`
 - **本封装源代码**：`/tmp/legal-document-format-skill/`
 - **本封装安装位置**：`~/.openclaw/workspace/skills/legal-skills-github/skills/wenge/`
-- **被替代的 md2word-gate**：`~/.openclaw/workspace/skills/legal-skills-github/skills/md2word-gate/`
+- **被替代的 md2word-gate**：2026-06-20 已迁移合并,设计思想保留于 `references/legacy-md2word-gate.md`
