@@ -1,6 +1,8 @@
 from __future__ import annotations
 
 import base64
+import datetime
+import fcntl
 import json
 import re
 import shutil
@@ -21,12 +23,17 @@ except ImportError as error:
 from base import BackendResult, ConvertOptions
 from common import (
     PADDLE_LOCAL_SUFFIXES,
+    PaddleOCRRateLimited,
     SourceInfo,
     estimate_base64_mb,
     first_non_empty,
+    is_paddle_rate_limited,
+    is_paddle_rate_limited_response,
+    is_transient_httpx_error,
     parse_bool,
     parse_positive_float,
     parse_positive_int,
+    retry_with_backoff,
     sanitize_config_value,
     sanitize_name,
 )
@@ -44,8 +51,12 @@ DEFAULT_BATCH_PAGES = 40
 DEFAULT_MAX_BASE64_MB = 20.0
 DEFAULT_POLL_INTERVAL = 5
 DEFAULT_POLL_TIMEOUT = 1800
+DEFAULT_RETRY_ATTEMPTS = 3
+DEFAULT_RETRY_BASE_DELAY = 1.0
+DEFAULT_RETRY_MAX_DELAY = 30.0
 PADDLE_JOB_MODEL = "PP-OCRv5"
 PADDLE_VL_MODEL = "PaddleOCR-VL-1.5"
+VL_MODEL_PREFIX = "PaddleOCR-VL"
 ASYNC_PATH_MARKER = "/api/v2/ocr/jobs"
 
 VL_TEXT_LABELS = {
@@ -143,6 +154,42 @@ def extract_markdown_and_images(provider_result: dict[str, Any]) -> tuple[str, d
                 images[str(key)] = str(value)
 
     return "\n\n".join(texts), images
+
+
+def extract_sync_page_count(provider_result: dict[str, Any]) -> int | None:
+    raw_result = provider_result.get("result")
+    if not isinstance(raw_result, dict):
+        return None
+
+    data_info = raw_result.get("dataInfo")
+    if not isinstance(data_info, dict):
+        return None
+
+    counts: list[int] = []
+    num_pages = data_info.get("numPages")
+    if isinstance(num_pages, int) and num_pages >= 0:
+        counts.append(num_pages)
+    pages = data_info.get("pages")
+    if isinstance(pages, list):
+        counts.append(len(pages))
+    return max(counts) if counts else None
+
+
+def validate_sync_page_count(
+    *,
+    label: str,
+    expected_pages: int | None,
+    returned_pages: int | None,
+) -> None:
+    if expected_pages is None or returned_pages is None:
+        return
+    if returned_pages >= expected_pages:
+        return
+    raise RuntimeError(
+        f"{label} PaddleOCR 返回页数不足：预期 {expected_pages} 页，实际返回 {returned_pages} 页。"
+        "这通常说明服务端存在单次页数上限；请降低 PADDLEOCR_BATCH_PAGES，"
+        "或使用 --pages 按更小范围重跑后再记录 OCR 完成。"
+    )
 
 
 def clean_vl_text(text: str) -> str:
@@ -289,6 +336,9 @@ class PaddleOCRBackend:
             first_non_empty(env, "PADDLEOCR_MODEL", "PADDLE_MODEL", "PADDLEOCR_API_MODEL")
             or (PADDLE_VL_MODEL if self.protocol == "async" else "layout-parsing")
         )
+        fallback_raw = first_non_empty(env, "PADDLEOCR_MODEL_FALLBACK") or ""
+        self.model_fallback = [m.strip() for m in fallback_raw.split(",") if m.strip()]
+        self._fallback_index = 0
         self.doc_orientation = parse_bool(
             first_non_empty(env, "PADDLEOCR_DOC_ORIENTATION", "PADDLEOCR_VL_DOC_ORIENTATION"),
             default=self.protocol == "async",
@@ -332,6 +382,26 @@ class PaddleOCRBackend:
             first_non_empty(env, "PADDLEOCR_MAX_BASE64_MB"),
             default=DEFAULT_MAX_BASE64_MB,
         )
+        self.retry_attempts = parse_positive_int(
+            first_non_empty(env, "PADDLEOCR_RETRY_ATTEMPTS", "LEGAL_OCR_RETRY_ATTEMPTS"),
+            default=DEFAULT_RETRY_ATTEMPTS,
+        )
+        self.retry_base_delay = parse_positive_float(
+            first_non_empty(env, "PADDLEOCR_RETRY_BASE_DELAY", "LEGAL_OCR_RETRY_BASE_DELAY"),
+            default=DEFAULT_RETRY_BASE_DELAY,
+        )
+        self.retry_max_delay = parse_positive_float(
+            first_non_empty(env, "PADDLEOCR_RETRY_MAX_DELAY", "LEGAL_OCR_RETRY_MAX_DELAY"),
+            default=DEFAULT_RETRY_MAX_DELAY,
+        )
+        self.daily_page_limit = parse_positive_int(
+            first_non_empty(env, "PADDLEOCR_DAILY_PAGE_LIMIT"),
+            default=0,
+        )
+        self._daily_usage_file = Path(
+            first_non_empty(env, "PADDLEOCR_DAILY_USAGE_FILE")
+            or "/tmp/paddleocr_daily_usage.json",
+        )
 
     def _make_request(self, payload: dict[str, Any]) -> dict[str, Any]:
         headers = {
@@ -339,9 +409,22 @@ class PaddleOCRBackend:
             "Content-Type": "application/json",
             "Client-Platform": "private-legal-skill",
         }
+
+        def _post() -> httpx.Response:
+            # 2026-06-14 v1.4.3:trust_env=False 绕过 env / 系统代理,避免 cron 沙箱下
+            # *_PROXY 含畸形值(`http://127.0.0.1:` 等)导致 httpx 解析 proxy URL 抛
+            # `InvalidURL: Invalid port: ':1]'`。调的是公网 PaddleOCR API,本不该走本机代理。
+            with httpx.Client(timeout=self.timeout_seconds, trust_env=False) as client:
+                return client.post(self.api_url, json=payload, headers=headers)
+
         try:
-            with httpx.Client(timeout=self.timeout_seconds) as client:
-                response = client.post(self.api_url, json=payload, headers=headers)
+            response = retry_with_backoff(
+                _post,
+                max_attempts=self.retry_attempts,
+                base_delay=self.retry_base_delay,
+                max_delay=self.retry_max_delay,
+                on_retry=self._log_retry,
+            )
         except httpx.TimeoutException as error:
             raise RuntimeError(f"PaddleOCR 请求超时：{self.timeout_seconds} 秒") from error
         except httpx.RequestError as error:
@@ -365,6 +448,13 @@ class PaddleOCRBackend:
         if result.get("errorCode", 0) != 0:
             raise RuntimeError(f"PaddleOCR 返回错误：{result.get('errorMsg', '未知错误')}")
         return result
+
+    def _log_retry(self, attempt: int, exc: BaseException, delay: float) -> None:
+        print(
+            f"PaddleOCR 瞬态错误 {type(exc).__name__}：{exc}。"
+            f"第 {attempt}/{self.retry_attempts - 1} 次重试，等待 {delay:.1f}s",
+            file=__import__("sys").stderr,
+        )
 
     def _parse_document(
         self,
@@ -393,8 +483,11 @@ class PaddleOCRBackend:
         payload["visualize"] = False
         return self._make_request(payload)
 
+    def _is_vl_model(self) -> bool:
+        return self.model.startswith(VL_MODEL_PREFIX)
+
     def _build_async_optional_payload(self) -> dict[str, Any]:
-        if self.model == PADDLE_VL_MODEL:
+        if self._is_vl_model():
             payload: dict[str, Any] = {
                 "useDocOrientationClassify": self.doc_orientation,
                 "useDocUnwarping": self.doc_unwarp,
@@ -432,9 +525,39 @@ class PaddleOCRBackend:
         }
         files = {"file": (input_path.name, input_path.read_bytes())}
 
-        try:
-            with httpx.Client(timeout=self.timeout_seconds) as client:
+        def _post() -> httpx.Response:
+            # 2026-06-14 v1.4.3:trust_env=False,见 _make_request 同款注释
+            with httpx.Client(timeout=self.timeout_seconds, trust_env=False) as client:
                 response = client.post(self.api_url, data=fields, files=files, headers=headers)
+            # 2026-06-14 v1.4.4:服务端 code:10010 队列满是瞬态限流,这里抛瞬态异常
+            # 让 retry_with_backoff 的 is_paddle_rate_limited 接住退避重试,
+            # 而不是返回 response 让外层直接 raise RuntimeError 把段标 failed
+            if is_paddle_rate_limited_response(response.status_code, response.text):
+                trace_id = None
+                try:
+                    trace_id = response.json().get("traceId")
+                except ValueError:
+                    pass
+                raise PaddleOCRRateLimited(
+                    f"PaddleOCR 服务端限流(HTTP {response.status_code}):{response.text[:300]}",
+                    trace_id=trace_id,
+                )
+            return response
+
+        try:
+            response = retry_with_backoff(
+                _post,
+                max_attempts=self.retry_attempts,
+                base_delay=self.retry_base_delay,
+                max_delay=self.retry_max_delay,
+                is_transient=lambda exc: is_transient_httpx_error(exc) or is_paddle_rate_limited(exc),
+                on_retry=self._log_retry,
+            )
+        except PaddleOCRRateLimited as error:
+            # 重试耗尽:服务端持续限流,抛清晰错误(上游 run_ocr.py 可据此决定延后而非标 failed)
+            raise RuntimeError(
+                f"PaddleOCR 服务端持续限流,重试 {self.retry_attempts} 次仍失败:{error}"
+            ) from error
         except httpx.RequestError as error:
             raise RuntimeError(f"PaddleOCR 异步任务提交失败：{error}") from error
 
@@ -455,9 +578,23 @@ class PaddleOCRBackend:
         headers = {"Authorization": f"bearer {self.access_token}"}
         deadline = time.time() + max(1, self.poll_timeout)
         last_payload: dict[str, Any] | None = None
-        with httpx.Client(timeout=self.timeout_seconds) as client:
+        # 2026-06-14 v1.4.3:trust_env=False,见 _make_request 同款注释
+        with httpx.Client(timeout=self.timeout_seconds, trust_env=False) as client:
             while True:
-                response = client.get(poll_url, headers=headers)
+                def _get_poll() -> httpx.Response:
+                    return client.get(poll_url, headers=headers)
+
+                try:
+                    response = retry_with_backoff(
+                        _get_poll,
+                        max_attempts=self.retry_attempts,
+                        base_delay=self.retry_base_delay,
+                        max_delay=self.retry_max_delay,
+                        on_retry=self._log_retry,
+                    )
+                except httpx.RequestError as error:
+                    raise RuntimeError(f"PaddleOCR 异步任务轮询网络失败：{error}") from error
+
                 if response.status_code not in {200, 201}:
                     raise RuntimeError(f"PaddleOCR 异步任务轮询失败（HTTP {response.status_code}）：{response.text[:500]}")
                 try:
@@ -476,7 +613,27 @@ class PaddleOCRBackend:
                         jsonl_url = str(result_url.get("jsonUrl") or "").strip()
                     if not jsonl_url:
                         raise RuntimeError(f"PaddleOCR 异步任务完成但未返回 jsonUrl：{data}")
-                    jsonl_response = client.get(jsonl_url)
+
+                    def _get_jsonl() -> httpx.Response:
+                        return client.get(jsonl_url)
+
+                    try:
+                        jsonl_response = retry_with_backoff(
+                            _get_jsonl,
+                            max_attempts=self.retry_attempts,
+                            base_delay=self.retry_base_delay,
+                            max_delay=self.retry_max_delay,
+                            on_retry=self._log_retry,
+                        )
+                    except httpx.InvalidURL as error:
+                        # 2026-06-14 诊断性 logging:暴露服务端返回的 jsonUrl 真值,
+                        # 上游 `Invalid port: ':1]'` 短文案无法定位,这里直接带 url 抛
+                        raise RuntimeError(
+                            f"PaddleOCR JSONL 下载 URL 非法:jsonUrl={jsonl_url!r} "
+                            f"(httpx.InvalidURL: {error})"
+                        ) from error
+                    except httpx.RequestError as error:
+                        raise RuntimeError(f"PaddleOCR JSONL 下载网络失败：{error}") from error
                     if jsonl_response.status_code != 200:
                         raise RuntimeError(f"PaddleOCR JSONL 下载失败（HTTP {jsonl_response.status_code}）")
                     return jsonl_response.text
@@ -486,8 +643,90 @@ class PaddleOCRBackend:
                     raise RuntimeError(f"PaddleOCR 异步任务轮询超时（{self.poll_timeout}s）：{last_payload}")
                 time.sleep(max(1, self.poll_interval))
 
+    def _with_daily_lock(self, fn):
+        self._daily_usage_file.parent.mkdir(parents=True, exist_ok=True)
+        fd = open(self._daily_usage_file, "a+")  # noqa: SIM115
+        try:
+            fcntl.flock(fd, fcntl.LOCK_EX)
+            fd.seek(0)
+            fn(fd)
+        finally:
+            fcntl.flock(fd, fcntl.LOCK_UN)
+            fd.close()
+
+    def _read_daily_usage(self) -> dict[str, Any]:
+        try:
+            text = self._daily_usage_file.read_text(encoding="utf-8")
+            data = json.loads(text)
+            if data.get("date") == datetime.date.today().isoformat():
+                return data
+        except (FileNotFoundError, json.JSONDecodeError, KeyError):
+            pass
+        return {"date": datetime.date.today().isoformat(), "models": {}}
+
+    def _write_daily_usage(self, data: dict[str, Any]) -> None:
+        tmp = self._daily_usage_file.with_suffix(".tmp")
+        tmp.write_text(json.dumps(data, ensure_ascii=False), encoding="utf-8")
+        tmp.replace(self._daily_usage_file)
+
+    def _add_daily_pages(self, model: str, pages: int) -> None:
+        if not self.daily_page_limit or pages <= 0:
+            return
+
+        def _update(fd):
+            fd.seek(0)
+            raw = fd.read()
+            try:
+                data = json.loads(raw) if raw.strip() else {}
+            except json.JSONDecodeError:
+                data = {}
+            if data.get("date") != datetime.date.today().isoformat():
+                data = {"date": datetime.date.today().isoformat(), "models": {}}
+            models = data.setdefault("models", {})
+            models[model] = models.get(model, 0) + pages
+            fd.seek(0)
+            fd.truncate()
+            fd.write(json.dumps(data, ensure_ascii=False))
+
+        self._with_daily_lock(_update)
+
+    def _check_daily_limit(self) -> None:
+        if not self.daily_page_limit:
+            return
+        data = self._read_daily_usage()
+        used = data.get("models", {}).get(self.model, 0)
+        if used >= self.daily_page_limit:
+            raise RuntimeError(
+                f"PaddleOCR 每日限额：模型 {self.model} 今日已用 {used} 页，"
+                f"限额 {self.daily_page_limit} 页（PADDLEOCR_DAILY_PAGE_LIMIT）"
+            )
+
+    def _is_quota_error(self, exc: Exception) -> bool:
+        msg = str(exc).lower()
+        return ("429" in msg or "403" in msg or "quota" in msg
+                or "频率过高" in msg or "配额" in msg or "limit" in msg
+                or "每日页数上限" in msg)
+
+    def _try_model_fallback(self) -> bool:
+        if self._fallback_index >= len(self.model_fallback):
+            return False
+        new_model = self.model_fallback[self._fallback_index]
+        self._fallback_index += 1
+        print(f"[fallback] 模型回退：{self.model} → {new_model}")
+        self.model = new_model
+        return True
+
     def _parse_document_async(self, input_path: Path, backend_dir: Path, label: str) -> dict[str, Any]:
-        job_id, submit_meta = self._submit_async_job(input_path)
+        try:
+            self._check_daily_limit()
+            job_id, submit_meta = self._submit_async_job(input_path)
+        except RuntimeError as exc:
+            if self._is_quota_error(exc) and self._try_model_fallback():
+                return self._parse_document_async(input_path, backend_dir, label)
+            raise
+        jsonl_text = self._poll_async_job(job_id)
+        estimated_pages = get_pdf_page_count(input_path) or 1
+        self._add_daily_pages(self.model, estimated_pages)
         jsonl_text = self._poll_async_job(job_id)
         text, images, objects = parse_jsonl_markdown(jsonl_text)
         if not text.strip():
@@ -695,12 +934,20 @@ class PaddleOCRBackend:
                 }
 
             for label, input_path in batch_inputs:
+                expected_pages = get_pdf_page_count(input_path) if source.suffix == ".pdf" else None
+                returned_pages = None
                 if self.protocol == "async":
                     envelope = self._parse_document_async(input_path, backend_dir, label)
                     text = envelope["text"]
                     images = envelope["images"]
                 else:
                     envelope = self._parse_document(file_path=str(input_path))
+                    returned_pages = extract_sync_page_count(envelope)
+                    validate_sync_page_count(
+                        label=label,
+                        expected_pages=expected_pages,
+                        returned_pages=returned_pages,
+                    )
                     text, images = extract_markdown_and_images(envelope)
                 if not text.strip():
                     raise RuntimeError(f"{label} OCR 完成，但未提取到有效文本")
@@ -710,6 +957,8 @@ class PaddleOCRBackend:
                         "input_path": str(input_path),
                         "envelope": envelope,
                         "protocol": self.protocol,
+                        "expected_pages": expected_pages,
+                        "returned_pages": returned_pages,
                         "text": text,
                         "images": images,
                     }
@@ -723,6 +972,8 @@ class PaddleOCRBackend:
                 "index": index,
                 "label": batch["label"],
                 "input_path": batch["input_path"],
+                "expected_pages": batch.get("expected_pages"),
+                "returned_pages": batch.get("returned_pages"),
                 "text_length": len(batch["text"]),
                 "image_count": len(batch["images"]),
             }

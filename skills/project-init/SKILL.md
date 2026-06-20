@@ -4,7 +4,7 @@ homepage: https://github.com/cat-xierluo/legal-skills
 author: 杨卫薪律师（微信ywxlaw）
 license: MIT License - 详见 LICENSE.txt
 description: |
-  项目初始化工具。读取全局协议 ~/.claude/CLAUDE.md，分析项目实际情况，生成项目特定的 CLAUDE.md 和 docs/ 上下文。本技能应在用户说"初始化项目"、"项目设置"、"配置 Claude Code"、"新建项目配置"时使用，或在进入一个新项目需要快速配置时使用。不要用于：Skill 内容开发（用 skill-architect）、单次 Skill 安装（用 skill-manager）、代码生成。
+  项目初始化工具。读取全局协议 ~/.claude/CLAUDE.md，分析项目实际情况，生成项目特定的 CLAUDE.md 和 docs/ 上下文。本技能应在用户说"初始化项目"、"项目设置"、"配置 Claude Code"、"新建项目配置"时使用，或在进入一个新项目需要快速配置时使用。不要用于：Skill 内容开发或验收（用 skill-lint）、单次 Skill 安装（用 skill-manager）、代码生成。
 ---
 
 # Project Init
@@ -54,38 +54,44 @@ description: |
 mkdir -p .claude/skills/
 ```
 
-**前置检查**：确认 `skill_sources` 中配置的路径是否存在，特别是 skill-manager 的路径。如果 skill-manager 不可用：
+对 profile 中 `skills` 字段列出的每个 Skill，通过调用 skill-manager Skill 以符号链接方式安装到项目的 `.claude/skills/` 目录。skill-manager 会自动处理路径解析、去重和版本追踪。
 
-1. 检查 `skill_sources.legal-skills` 路径下是否存在 `skill-manager/` 目录。
-2. 如果不存在，提示用户安装 skill-manager：
-   ```
-   skill-manager 未找到，需要先安装才能自动安装 Skill。
-   安装方式：skill-manager install https://github.com/cat-xierluo/legal-skills/tree/main/skills/skill-manager
-   或者手动指定：skill-manager install <skill-manager 本地路径>
-   ```
-3. 用户安装后继续，或者跳过 Skill 安装步骤。
+### Step 7: 生成 AGENTS.md 和 CLAUDE.md
 
-对 profile 中 `skills` 字段列出的每个 Skill，委托 skill-manager 安装：
+**不是复制模板，而是基于全局协议 + 项目分析结果生成项目特定的 AGENTS.md。**
 
-```bash
-bash <skill-manager-path>/scripts/install.sh "<source_path>/<skill_name>"
-```
-
-### Step 7: 生成 CLAUDE.md
-
-**不是复制模板，而是基于全局协议 + 项目分析结果生成项目特定的 CLAUDE.md。**
-
-参考 `references/CLAUDE.md` 中各项目类型的结构指南和生成范例，结合 Step 4 的分析结果，生成包含真实项目信息的内容。
+参考 `references/CLAUDE.md` 中各项目类型的结构指南和生成范例，结合 Step 4 的分析结果，生成包含真实项目信息的内容，写入 `AGENTS.md`。
 
 `references/CLAUDE.md` 包含所有项目类型的段落定义、结构模板和脱敏范例，无需参考其他外部文件。
 
-已有 `CLAUDE.md` 时展示 diff，让用户决定覆盖/合并/跳过。
+`CLAUDE.md` 不重复写内容，仅写入：
+```
+@include ./AGENTS.md
+```
+
+这样 Claude Code 和 Codex 共享同一份项目协议，只维护一个源文件。
+
+已有 `AGENTS.md` 时展示 diff，让用户决定覆盖/合并/跳过。已有 `CLAUDE.md` 但内容不是纯 `@include` 时，同样展示 diff。
 
 ### Step 8: 生成 settings.json
 
 直接复制 `references/settings-template.json`。已有则跳过。
 
-### Step 9: 生成 docs/ 文档
+### Step 9: 创建 .codex/ 目录
+
+```bash
+bash scripts/init.sh codex "<project_dir>"
+```
+
+创建 `.codex/` 目录结构：
+
+- `config.toml`：从 `references/codex-config.toml` 复制
+- `rules/default.rules`：从 `references/codex-default.rules` 复制
+- `skills`：符号链接 → `../.claude/skills`（与 `.claude/skills/` 共享，不重复安装）
+
+已有则跳过。`.codex/skills` 软链确保 Codex 能直接访问 `.claude/skills/` 中已安装的 Skill。
+
+### Step 10: 生成 docs/ 文档
 
 **不是复制空模板，而是基于全局协议的文档体系定义 + 项目分析结果生成有实际内容的文档。**
 
@@ -95,15 +101,15 @@ bash <skill-manager-path>/scripts/install.sh "<source_path>/<skill_name>"
 - **docs/DECISIONS.md**: 第一条决策记录（项目初始化的技术选型）
 - **任务清单文件**: 仅当项目选择文件化任务源时创建；文件名和格式由项目上下文决定
 - **docs/ARCHITECTURE.md**: 从目录结构和技术栈生成初始架构描述
-- **DESIGN.md**: 仅前端项目，从 `references/DESIGN.md` 了解九段式结构，结合实际技术栈生成
+- **DESIGN.md**: 仅包含前端的项目，从 `references/DESIGN.md` 了解九段式结构，结合实际技术栈生成
 
 仅创建不存在的文件。
 
-### Step 10: 创建 .gitignore
+### Step 11: 创建 .gitignore
 
 从 `references/.gitignore` 复制。已有则跳过。
 
-### Step 11: Skill 脚手架（仅 skill-project 类型）
+### Step 12: Skill 脚手架（仅 skill-project 类型）
 
 ```bash
 bash scripts/init.sh scaffold "<project_dir>" "<skill_name>"

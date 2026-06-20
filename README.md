@@ -9,11 +9,12 @@
 兼容 Claude Code、OpenClaw、WorkBuddy、QoderWork、CodeX、OpenCode、Hermes 等主流 AI Agent 平台。
 
 [![Legal Skills](https://img.shields.io/badge/Legal%20Skills-AI%20for%20Law-1F4E5F)](https://github.com/cat-xierluo/legal-skills)
-[![Skills](https://img.shields.io/badge/Skills-45-2E7D32)](#-技能列表)
+[![Skills](https://img.shields.io/badge/Skills-48-2E7D32)](#-技能列表)
 [![Domain](https://img.shields.io/badge/Domain-LegalTech-0F766E)](#-项目概述)
 <br/>
 [![Language](https://img.shields.io/badge/Language-%E4%B8%AD%E6%96%87%E4%BC%98%E5%85%88-B91C1C)](#)
 [![GitHub stars](https://img.shields.io/github/stars/cat-xierluo/legal-skills?style=social)](https://github.com/cat-xierluo/legal-skills/stargazers)
+[![Homepage](https://img.shields.io/badge/Homepage-Website-2563EB)](https://cat-xierluo.github.io/legal-skills/)
 
 </div>
 
@@ -49,14 +50,14 @@
 
 | 日期       | 类型     | Skill                                             | 版本   | 更新要点                                                                                           |
 | :--------- | :------- | :------------------------------------------------ | :----- | :------------------------------------------------------------------------------------------------- |
-| 2026-05-28 | 更新     | [code2patent](skills/code2patent/)               | v1.5.3 | 补强架构转译规则：理解代码架构后转为对象、关系、状态、动作、时序和输出，不写模块/技术选型清单 |
-| 2026-05-20 | 更新     | [skill-lint](skills/skill-lint/)                 | v1.4.0 | 更新 Frontmatter 校验规则：`version` 调整为推荐发布字段，并检查 CHANGELOG、README、marketplace 版本同步 |
-| 2026-05-20 | 更新     | [skill-architect](skills/skill-architect/)       | v1.4.0 | 创建与审查流程同步新版 Frontmatter 发布规范，默认纳入 version、author、homepage 推荐字段 |
-| 2026-05-20 | 更新     | [legal-ocr](skills/legal-ocr/)                   | v1.3.1 | 精简 description，仅保留 OCR、扫描识别、文档识别等功能触发条件和必要边界 |
-| 2026-05-20 | 新上传   | [release-workflow](skills/release-workflow/)                   | v1.1.0 | 通用化 GitHub 项目发布工作流：版本号管理 → Release Notes → tag → CI 监控 → 发布验证 → 清理 |
-| 2026-05-20 | 新上传   | [video-screenshot](skills/video-screenshot/)                 | v0.3.1 | 从录屏视频中自动抽取关键帧、去重并保存为图片，可用作法律证据 |
-| 2026-05-18 | 更新     | [legal-proposal-generator](skills/legal-proposal-generator/) | v0.3.0 | 重构文档类型判断逻辑，解决"建议书"与"方案"误匹配，新增案件性质优先级和禁止降级规则 |
-| 2026-05-18 | 更新     | [skill-manager](skills/skill-manager/)               | v1.5.0 | 新增远程 Skill 更新检测（版本对比 + Commit 对比）、安装元数据追踪（commit/branch/subpath）、更新摘要自动生成 |
+| 2026-06-15 | 更新     | [yuandian-law-search](skills/yuandian-law-search/) | v1.7.4 | 修复 `--expand` 自动 OR 失效问题，强化案件综合/标杆类案检索的 `case-semantic` 优先、短关键词复检和零命中复检规则，并同步发布版本 |
+| 2026-06-13 | 更新     | [contract-copilot](skills/contract-copilot/) | v1.5.3 | 修复 Word 批注时间线错峰失效：新增批注只消耗一次运行时时间戳，`w:date` 使用本地时区偏移，`w16du:dateUtc` / `w16cex:dateUtc` 写入同一时点的 UTC 格式；同时修复缺失 `commentsExtensible.xml` 时新增批注失败的问题 |
+| 2026-06-12 | 新上传   | [legal-visualization](skills/legal-visualization/) | v0.6.14 | 面向法律业务场景的法律图解与图表生成技能：路由→VizSpec→编排→drawio XML→导出五段流水线；硬约束（缺失事实显式标注、业务条线优先于图型、VizSpec.routing 必填、一图一观点）；18 个业务条线 `.drawio` 模板（诉讼/公司/合规/合同/知产/房地产/服务）+ 13 份方法论 references + 3 个脚本（XML 校验/批量导出/命名规范）；默认交付 `.drawio + .svg + .png` 三件套 |
+| 2026-06-12 | 更新     | [skill-lint](skills/skill-lint/) | v2.0.8 | 新增安全评估模块：将危险执行、敏感文件访问、数据外传、硬编码凭证、提示词安全、依赖风险、安装钩子、MCP 风险和 Git 历史敏感泄露纳入正式质量意见报告 |
+| 2026-06-11 | 更新     | [img2pdf](skills/img2pdf/) | v1.2.0 | 新增长截图模式：`--mode {nup, vertical}` 切换、`--split` 长截图自动切割（按 A4 比例自动算段高）、`--split-height` 显式段高控制；vertical 模式不切割、单图成单页、页面高度按图等比自适应；解决微信聊天记录 / 庭审笔录两类典型长截图 → PDF 需求 |
+| 2026-06-11 | 更新     | [new-case](skills/new-case/) | v1.3.5 | 商标预设拆 2 个业务子模板（注册 7 目录含独立商标注册证 / 异议复审无效 8 目录含独立商标注册证 + 证据材料）；命名规范文档占位符化（去除真实客户 / 案件 / 申请号）；新增 1 客户含 ≥2 独立业务子项目时按「1 根 + N 子项目」拆分的整理规则，每个子项目独立 7/8 目录模板 |
+| 2026-06-11 | 更新     | [md2word](skills/md2word/) | v1.0.1 | 修复图片 src 解析：支持 URL 解码、相对路径（基于 md 文件目录）、markdown title 标签去除；新增表格单元格内 markdown 图片语法支持，图片按 5cm 宽插入 + 居中斜体 alt 文字作图注，路径不存在时降级原样写入不丢内容 |
+| 2026-06-11 | 更新     | [legal-ocr](skills/legal-ocr/) | v1.4.0 | 修复 PaddleOCR/MinerU 每日页数配额超限时的模型回退路径：`_check_daily_limit` 移入 try 块，使配额异常能触发 `_try_model_fallback` 兜底（v1.3.4 引入的「每日页数限额与模型回退」设计正式收口） |
 
 </details>
 
@@ -118,7 +119,7 @@
 <td>工具·OCR</td>
 <td style="word-break:break-word">OCR、扫描识别、图片文字识别和文档识别工具，支持 PDF、图片、Office 文档和 URL 转 Markdown；法律材料可进行保守的术语与文书结构优化</td>
 <td style="text-align:center">MIT</td>
-<td style="text-align:center">v1.3.1</td>
+<td style="text-align:center">v1.4.0</td>
 <td>推荐统一入口</td>
 </tr>
 <tr>
@@ -177,22 +178,6 @@
 <td style="text-align:center">v1.1.0</td>
 <td></td>
 </tr>
-<tr>
-<td><a href="skills/minimax-web-search/"><strong>minimax-web-search</strong></a></td>
-<td>工具·搜索</td>
-<td style="word-break:break-word">通过 MiniMax MCP 进行网络搜索</td>
-<td style="text-align:center">MIT</td>
-<td style="text-align:center">v0.1.1</td>
-<td>适用于 OpenClaw</td>
-</tr>
-<tr>
-<td><a href="skills/minimax-image-understand/"><strong>minimax-image-understand</strong></a></td>
-<td>工具·图像理解</td>
-<td style="word-break:break-word">通过 MiniMax MCP 进行图像理解</td>
-<td style="text-align:center">MIT</td>
-<td style="text-align:center">v0.1.0</td>
-<td>适用于 OpenClaw</td>
-</tr>
 </tbody>
 </table>
 
@@ -215,9 +200,9 @@
 <tr>
 <td><a href="skills/yuandian-law-search/"><strong>yuandian-law-search</strong></a></td>
 <td>通用·检索</td>
-<td style="word-break:break-word">元典法条与案例检索，通过元典 API 检索中国法律法规条文和案例。支持法条语义/关键词/详情检索和案例关键词/向量语义检索，共 5 种检索模式</td>
+<td style="word-break:break-word">元典法条与案例检索，通过元典 API 或官方 MCP 获取法条、案例、法规与企业信息，并自动归档；支持将多次检索汇总为 7 节结论先行法律检索报告</td>
 <td style="text-align:center">MIT</td>
-<td style="text-align:center">v1.3.3</td>
+<td style="text-align:center">v1.7.4</td>
 <td>需配置 API Key</td>
 </tr>
 <tr>
@@ -237,19 +222,11 @@
 <td>参考自 <a href="https://github.com/Lawyer-ray/FachuanHybridSystem">法穿</a></td>
 </tr>
 <tr>
-<td><a href="skills/video-screenshot/"><strong>video-screenshot</strong></a></td>
-<td>通用·证据</td>
-<td style="word-break:break-word">从录屏视频（微信聊天录屏、会议录屏等）中自动抽取关键帧、去重并保存为图片文件，可用作法律证据。支持场景变化检测、关键帧提取、智能去重四种策略</td>
-<td style="text-align:center">MIT</td>
-<td style="text-align:center">v0.3.1</td>
-<td></td>
-</tr>
-<tr>
 <td><a href="skills/new-case/"><strong>new-case</strong></a></td>
 <td>通用·案件管理</td>
 <td style="word-break:break-word">将案件/咨询材料整理成标准化目录结构。支持诉讼案件（12目录）和潜在项目/咨询（3目录）两种预设，自动生成案件信息看板、工时记录和期限管理文件</td>
 <td style="text-align:center">CC-BY-NC</td>
-<td style="text-align:center">v1.2.2</td>
+<td style="text-align:center">v1.3.5</td>
 <td></td>
 </tr>
 <tr>
@@ -265,8 +242,16 @@
 <td>通用·合同</td>
 <td style="word-break:break-word">合同起草与审查助手，基于分层分析与四步流程，输出可执行的风险清单、起草骨架、修改建议、推荐措辞和审查意见书，支持批注与修订两种文档处理方式</td>
 <td style="text-align:center">CC-BY-NC</td>
-<td style="text-align:center">v1.5.1</td>
+<td style="text-align:center">v1.5.3</td>
 <td><a href="https://github.com/cat-xierluo/contract-copilot.skill">独立仓库</a></td>
+</tr>
+<tr>
+<td><a href="skills/legal-case-analysis/"><strong>legal-case-analysis</strong></a></td>
+<td>通用·分析</td>
+<td style="word-break:break-word">通用法律分析技能，基于案件材料、咨询材料、合同资料、证据材料或检索结果进行法律分析、案件研判、风险评估与诉讼/非诉策略；前置分析引擎，报告为可选交付形态</td>
+<td style="text-align:center">CC-BY-NC</td>
+<td style="text-align:center">v0.2.6</td>
+<td></td>
 </tr>
 <tr>
 <td><a href="skills/legal-proposal-generator/"><strong>legal-proposal-generator</strong></a></td>
@@ -324,6 +309,14 @@
 <td style="text-align:center">v0.2.6</td>
 <td><a href="https://github.com/cat-xierluo/opc-legal-counsel.skill">独立仓库</a></td>
 </tr>
+<tr>
+<td><a href="skills/legal-visualization/"><strong>legal-visualization</strong></a></td>
+<td>专业·可视化</td>
+<td style="word-break:break-word">面向法律业务场景的法律图解与图表生成技能，把案件材料、合同、合规、交易、证据链、诉讼流程、时间轴、法律关系、客户汇报和服务方案整理成关系图/流程图/时间轴/证据链/风险图/路线图，先按受众和任务路由场景再出图，默认交付 .drawio + .svg + .png 三件套</td>
+<td style="text-align:center">CC-BY-NC</td>
+<td style="text-align:center">v0.6.14</td>
+<td></td>
+</tr>
 </tbody>
 </table>
 
@@ -344,11 +337,51 @@
 </thead>
 <tbody>
 <tr>
+<td><a href="skills/pdf-processor/"><strong>pdf-processor</strong></a></td>
+<td>工具·PDF处理</td>
+<td style="word-break:break-word">PDF 处理工具，支持扫描件预处理、OCR 双层 PDF 生成、页码添加、PDF 合并、解密、水印去除和压缩。统一入口自动选择最短可用流程，配合 pdf-organizer 完成从预处理到文书整理的完整工作流</td>
+<td style="text-align:center">MIT</td>
+<td style="text-align:center">v2.6.8</td>
+<td></td>
+</tr>
+<tr>
+<td><a href="skills/img2pdf/"><strong>img2pdf</strong></a></td>
+<td>工具·PDF排版</td>
+<td style="word-break:break-word">将图片或 PDF 页面按 N 张/页编排为标准化 A4 PDF，或将长截图渲染为单张自适应高度 PDF；支持 1/2/3/4 张每页布局，自动检测图片横竖方向，适用于法律证据材料整理（手机截图、视频取证截图、现场照片、长截图等）</td>
+<td style="text-align:center">MIT</td>
+<td style="text-align:center">v1.2.0</td>
+<td></td>
+</tr>
+<tr>
+<td><a href="skills/pdf-organizer/"><strong>pdf-organizer</strong></a></td>
+<td>通用·PDF整理</td>
+<td style="word-break:break-word">法律 PDF 文书整理工具：按内容拆分、合并或直接重命名 OCR 后双层扫描件，生成页面索引、manifest 草稿和下游交接文件；支持旋转与倾斜校正，不做 OCR 或压缩</td>
+<td style="text-align:center">MIT</td>
+<td style="text-align:center">v0.5.0</td>
+<td></td>
+</tr>
+<tr>
 <td><a href="skills/course-generator/"><strong>course-generator</strong></a></td>
 <td>工具·课程</td>
 <td style="word-break:break-word">课程内容管理平台。支持三种工作模式：从转录稿/文献生成结构化课程、将课程归档到知识库、根据客户需求从现有素材中提取并重组定制化培训方案；支持绝对路径配置、用户词典术语纠错、英文专有名称保真、图片资产保真与正文插图克制、结构适配、问答融入、高保真正文增强、独立正文去来源痕迹、总览/章节生成和旧命名兼容</td>
 <td style="text-align:center">CC-BY-NC</td>
 <td style="text-align:center">v2.3.3</td>
+<td></td>
+</tr>
+<tr>
+<td><a href="skills/transcription-corrector/"><strong>transcription-corrector</strong></a></td>
+<td>工具·校对</td>
+<td style="word-break:break-word">ASR 转录稿纠错与轻度优化工具：按用户词典统一替换同音字与英文专有名称漂移，可选合并同发言人发言、清理标点和切分段落；与 course-generator 共用词典格式，原始文件保持不动并双写归档</td>
+<td style="text-align:center">MIT</td>
+<td style="text-align:center">v1.0.7</td>
+<td></td>
+</tr>
+<tr>
+<td><a href="skills/video-screenshot/"><strong>video-screenshot</strong></a></td>
+<td>工具·视频处理</td>
+<td style="word-break:break-word">从录屏视频（微信聊天录屏、会议录屏等）中自动抽取关键帧、去重并保存为图片文件，可用作法律证据。支持场景变化检测、关键帧提取、智能去重四种策略</td>
+<td style="text-align:center">MIT</td>
+<td style="text-align:center">v0.3.2</td>
 <td></td>
 </tr>
 <tr>
@@ -396,7 +429,7 @@
 <td>工具·写作</td>
 <td style="word-break:break-word">检测并去除文章中的 AI 化表述模式，用于写作润色、文本优化、去 AI 腔。整合 24 种 AI 写作检测规则，配备 5 维度质量评分系统</td>
 <td style="text-align:center">MIT</td>
-<td style="text-align:center">v1.1.0</td>
+<td style="text-align:center">v1.2.0</td>
 <td><a href="https://github.com/cat-xierluo/de-ai-polish.skill">独立仓库</a></td>
 </tr>
 <tr>
@@ -451,11 +484,11 @@
 <td></td>
 </tr>
 <tr>
-<td><a href="skills/skill-architect/"><strong>skill-architect</strong></a></td>
+<td><a href="skills/skill-lint/"><strong>skill-lint</strong></a></td>
 <td>工具·Skill开发</td>
-<td style="word-break:break-word">技能架构师向导与审查工具，整合官方 skill-creator 流程与内置合规检查，支持创建新技能、编辑现有技能、打包技能、同步 Frontmatter 发布规范和审查格式合规性</td>
-<td style="text-align:center">CC-BY-NC</td>
-<td style="text-align:center">v1.4.0</td>
+<td style="word-break:break-word">Skill 质量验收与格式审查工具，支持审查目录结构、Frontmatter、引用一致性、发布版本、业务流深度、可评估性和安全风险，生成结构化审查报告</td>
+<td style="text-align:center">MIT</td>
+<td style="text-align:center">v2.0.8</td>
 <td></td>
 </tr>
 <tr>
@@ -463,15 +496,31 @@
 <td>工具·Git</td>
 <td style="word-break:break-word">智能 Git 批量提交工具，自动将混合的文件修改按类型分类并创建多个清晰聚焦的提交，使用标准化的提交信息格式</td>
 <td style="text-align:center">MIT</td>
-<td style="text-align:center">v1.4.0</td>
+<td style="text-align:center">v1.4.1</td>
 <td></td>
 </tr>
 <tr>
 <td><a href="skills/git-workflow/"><strong>git-workflow</strong></a></td>
 <td>工具·Git</td>
-<td style="word-break:break-word">Git 全流程工作流助手，覆盖分支创建、Monorepo 安全合并、PR 创建/审查/合并、合并冲突恢复、Cherry-pick 安全流程和常规 Git 操作规则</td>
+<td style="word-break:break-word">Git 工作流安全助手，覆盖分支管理、Monorepo 安全合并、PR 创建/审查/合并、冲突处理、cherry-pick、安全回退和已合并分支清理</td>
 <td style="text-align:center">MIT</td>
-<td style="text-align:center">v1.1.0</td>
+<td style="text-align:center">v1.4.1</td>
+<td></td>
+</tr>
+<tr>
+<td><a href="skills/cross-agent-coordination/"><strong>cross-agent-coordination</strong></a></td>
+<td>工具·Agent协作</td>
+<td style="word-break:break-word">跨平台 Agent 任务协调枢纽，围绕项目任务源分配任务、标记归属、能力路由并保留交接上下文</td>
+<td style="text-align:center">MIT</td>
+<td style="text-align:center">v1.0.0</td>
+<td></td>
+</tr>
+<tr>
+<td><a href="skills/multi-agent-orchestration/"><strong>multi-agent-orchestration</strong></a></td>
+<td>工具·Agent协作</td>
+<td style="word-break:break-word">多 Agent 本地执行编排，支持 worktree/session 隔离、Agent Teams/tmux 启动、PM 巡检和 PR 收口</td>
+<td style="text-align:center">MIT</td>
+<td style="text-align:center">v1.8.2</td>
 <td></td>
 </tr>
 <tr>
@@ -488,22 +537,6 @@
 <td style="word-break:break-word">GitHub Star 项目管理工具，从内容自动发现并 Star 项目，同步追踪已 Star 项目更新，生成可视化 Dashboard，支持分类管理和标签系统</td>
 <td style="text-align:center">MIT</td>
 <td style="text-align:center">v0.6.1</td>
-<td></td>
-</tr>
-<tr>
-<td><a href="skills/skill-lint/"><strong>skill-lint</strong></a></td>
-<td>工具·Skill开发</td>
-<td style="word-break:break-word">Skill 格式审查工具，基于 docs/SKILL-DEV-GUIDE.md 规范对技能进行合规性审计，检查 Frontmatter 与版本同步、文档与代码一致性，识别冗余内容，生成技能审计报告</td>
-<td style="text-align:center">MIT</td>
-<td style="text-align:center">v1.4.0</td>
-<td></td>
-</tr>
-<tr>
-<td><a href="skills/repo-research/"><strong>repo-research</strong></a></td>
-<td>工具·研究</td>
-<td style="word-break:break-word">GitHub 仓库深度研究工具，支持单/多仓库研究、与本地项目对比分析、启发式整合建议。支持主题驱动搜索模式：自动搜索相关仓库、克隆、分析并生成报告</td>
-<td style="text-align:center">CC-BY-NC</td>
-<td style="text-align:center">v0.7.0</td>
 <td></td>
 </tr>
 <tr>
@@ -549,3 +582,14 @@
 将以下内容复制到你的 Agent 平台，让它帮你安装：
 
 > 请帮我从 GitHub 安装 legal-skills 技能集合：[https://github.com/cat-xierluo/legal-skills](https://github.com/cat-xierluo/legal-skills)
+
+## 📦 已归档/已合并技能
+
+以下技能已停止维护、归档或合并到其他技能，不再作为独立 Skill 随仓库发布：
+
+| 技能 | 版本 | 说明 |
+|------|------|------|
+| skill-architect | v1.6.2 | 已重定位为 [skill-lint](skills/skill-lint/) v2.0.0，创建能力不再作为本仓库独立入口维护 |
+| minimax-image-understand | v0.1.0 | 各平台已原生支持 MiniMax MCP 图像理解，无需独立 skill |
+| minimax-web-search | v0.1.1 | 各平台已原生支持 MiniMax MCP 网络搜索，无需独立 skill |
+| repo-research | v0.7.0 | 功能较简单，不再维护 |

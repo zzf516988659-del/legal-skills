@@ -28,7 +28,6 @@ wechat-article-fetch:
 
 # ===== 效率工具 =====
 skill-lint:
-skill-architect:
 skill-manager:
 git-batch-commit:
 

@@ -1,5 +1,6 @@
 .DS_Store
 .specstory/
+.omo/
 .vscode/
 *.code-workspace
 dist/
@@ -18,16 +19,13 @@ templates/
 .agents/*.json
 **/DECISIONS.md
 **/TASKS.md
-!skills/article2book/DECISIONS.md
-!skills/article2book/TASKS.md
-!skills/legal-ocr/DECISIONS.md
-!skills/legal-ocr/TASKS.md
 !CLAUDE.md
 **/*/CLAUDE.md
 
 # project-init 参考文件：这些是模板，不是运行时生成的项目文件
 !skills/project-init/references/DECISIONS.md
 !skills/project-init/references/CLAUDE.md
+!skills/project-init/references/TASKS.md
 
 # Archive directories - ignore content but keep directory structure
 **/archive/*
@@ -38,6 +36,7 @@ templates/
 # Use .env.example for templates
 **/.env
 !**/.env.example
+**/.agent-profiles/
 **/config/*.yaml
 !**/config/*.example.yaml
 **/config/*.json
@@ -137,3 +136,13 @@ skills/ultra-research
 
 # Custom skills（用户自定义符号链接）
 custom-skills
+
+# myagents-cli (symlink to ~/.myagents/skills/myagents-cli)
+skills/myagents-cli
+
+# hatch-pet (symlink to ~/.myagents/skills/hatch-pet)
+skills/hatch-pet
+
+# Packed skills（打包输出目录）
+pack-skills/
+.claude/plans/myagents/
